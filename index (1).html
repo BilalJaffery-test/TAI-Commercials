@@ -1,0 +1,1096 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TAI Ops Dashboard — March 2026</title>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-2ETC8M6B40"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-2ETC8M6B40');
+</script>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0f1117;
+    --surface: #181c27;
+    --surface2: #1e2333;
+    --border: rgba(255,255,255,0.07);
+    --border2: rgba(255,255,255,0.12);
+    --text: #e8eaf0;
+    --muted: #7a8099;
+    --faint: #3a4060;
+    --accent: #4f8ef7;
+    --accent2: #2dd4a0;
+    --accent3: #f5a623;
+    --accent4: #e05c6e;
+    --accent5: #a78bfa;
+    --accent6: #34d1bf;
+    --positive: #2dd4a0;
+    --negative: #e05c6e;
+    --warn: #f5a623;
+  }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  header {
+    padding: 24px 32px 0;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 24px;
+  }
+
+  .header-left h1 {
+    font-size: 22px;
+    font-weight: 600;
+    letter-spacing: -0.3px;
+    color: var(--text);
+  }
+
+  .header-left p {
+    font-size: 13px;
+    color: var(--muted);
+    margin-top: 4px;
+    margin-bottom: 20px;
+  }
+
+  nav {
+    display: flex;
+    gap: 0;
+  }
+
+  nav button {
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    padding: 10px 18px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--muted);
+    cursor: pointer;
+    transition: color 0.15s, border-color 0.15s;
+    white-space: nowrap;
+  }
+
+  nav button:hover { color: var(--text); }
+  nav button.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  main {
+    padding: 28px 32px;
+    max-width: 1400px;
+  }
+
+  .section { display: none; }
+  .section.active { display: block; }
+
+  /* KPI grid */
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+
+  .kpi {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px 18px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .kpi::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+  }
+
+  .kpi.blue::before { background: var(--accent); }
+  .kpi.green::before { background: var(--accent2); }
+  .kpi.amber::before { background: var(--accent3); }
+  .kpi.red::before { background: var(--accent4); }
+  .kpi.purple::before { background: var(--accent5); }
+  .kpi.teal::before { background: var(--accent6); }
+
+  .kpi-label {
+    font-size: 11px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+
+  .kpi-value {
+    font-family: 'DM Mono', monospace;
+    font-size: 26px;
+    font-weight: 500;
+    color: var(--text);
+    letter-spacing: -0.5px;
+    line-height: 1;
+  }
+
+  .kpi-sub {
+    font-size: 12px;
+    margin-top: 6px;
+  }
+
+  .pos { color: var(--positive); }
+  .neg { color: var(--negative); }
+  .warn-c { color: var(--warn); }
+
+  /* chart rows */
+  .chart-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+
+  .chart-row.single { grid-template-columns: 1fr; }
+  .chart-row.thirds { grid-template-columns: 2fr 1fr; }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px;
+  }
+
+  .card-title {
+    font-size: 12px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--muted);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .card-title span {
+    font-size: 11px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 3px 8px;
+    color: var(--muted);
+    text-transform: none;
+    letter-spacing: 0;
+    font-weight: 400;
+  }
+
+  .chart-wrap {
+    position: relative;
+    width: 100%;
+  }
+
+  /* Legend */
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 12px;
+    font-size: 11px;
+    color: var(--muted);
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .legend-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 2px;
+    flex-shrink: 0;
+  }
+
+  /* Forecast table */
+  .forecast-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+  }
+
+  .forecast-table th {
+    text-align: left;
+    padding: 8px 10px;
+    color: var(--muted);
+    font-weight: 500;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .forecast-table td {
+    padding: 9px 10px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text);
+  }
+
+  .forecast-table tr:last-child td { border-bottom: none; }
+  .forecast-table tr:hover td { background: var(--surface2); }
+
+  .forecast-table td.mono {
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+  }
+
+  .badge {
+    display: inline-block;
+    padding: 2px 7px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 500;
+  }
+
+  .badge-blue { background: rgba(79,142,247,0.15); color: #4f8ef7; }
+  .badge-green { background: rgba(45,212,160,0.15); color: #2dd4a0; }
+  .badge-amber { background: rgba(245,166,35,0.15); color: #f5a623; }
+  .badge-red { background: rgba(224,92,110,0.15); color: #e05c6e; }
+  .badge-purple { background: rgba(167,139,250,0.15); color: #a78bfa; }
+  .badge-teal { background: rgba(52,209,191,0.15); color: #34d1bf; }
+
+  /* Util bars */
+  .util-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  .util-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+  }
+
+  .util-team {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--muted);
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+  }
+
+  .util-pct {
+    font-family: 'DM Mono', monospace;
+    font-size: 28px;
+    font-weight: 500;
+    color: var(--text);
+    line-height: 1;
+    margin-bottom: 10px;
+  }
+
+  .util-bar-bg {
+    background: var(--faint);
+    border-radius: 3px;
+    height: 5px;
+    overflow: hidden;
+  }
+
+  .util-bar-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.6s ease;
+  }
+
+  .util-sub {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 6px;
+  }
+
+  /* debt timeline */
+  .debt-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 12px;
+  }
+
+  .debt-row:last-child { border-bottom: none; }
+  .debt-month { width: 40px; color: var(--muted); font-weight: 500; }
+  .debt-bar-bg { flex: 1; background: var(--faint); border-radius: 3px; height: 6px; overflow: hidden; }
+  .debt-bar-fill { height: 100%; border-radius: 3px; background: var(--accent4); transition: width 0.5s ease; }
+  .debt-val { width: 70px; text-align: right; font-family: 'DM Mono', monospace; color: var(--text); }
+  .debt-now { color: var(--positive); font-weight: 500; }
+
+  /* Highlight box */
+  .highlight-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    border-radius: 8px;
+    padding: 14px 16px;
+    font-size: 13px;
+    color: var(--text);
+    margin-bottom: 16px;
+    line-height: 1.7;
+  }
+
+  .highlight-box.green { border-left-color: var(--accent2); }
+  .highlight-box.amber { border-left-color: var(--accent3); }
+
+  .hl-title {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+
+  /* D365 timeline */
+  .timeline {
+    position: relative;
+    padding-left: 24px;
+  }
+
+  .timeline::before {
+    content: '';
+    position: absolute;
+    left: 7px; top: 6px; bottom: 6px;
+    width: 1px;
+    background: var(--faint);
+  }
+
+  .timeline-item {
+    position: relative;
+    margin-bottom: 16px;
+  }
+
+  .timeline-item::before {
+    content: '';
+    position: absolute;
+    left: -20px;
+    top: 5px;
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--accent);
+    border: 2px solid var(--bg);
+  }
+
+  .timeline-item.done::before { background: var(--accent2); }
+  .timeline-item.warn::before { background: var(--accent3); }
+
+  .timeline-date {
+    font-size: 11px;
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+    margin-bottom: 3px;
+  }
+
+  .timeline-text {
+    font-size: 13px;
+    color: var(--text);
+  }
+
+  /* Responsive */
+  @media (max-width: 900px) {
+    .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+    .chart-row { grid-template-columns: 1fr; }
+    .chart-row.thirds { grid-template-columns: 1fr; }
+    .util-grid { grid-template-columns: repeat(2, 1fr); }
+    header { flex-direction: column; align-items: flex-start; }
+    nav { overflow-x: auto; width: 100%; }
+  }
+
+  @media (max-width: 600px) {
+    main { padding: 16px; }
+    header { padding: 16px 16px 0; }
+    .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-left">
+    <h1>TAI Ops Dashboard</h1>
+    <p>Financial year 2026 &nbsp;·&nbsp; Data as of 31 March 2026 &nbsp;·&nbsp; Forecasts weighted</p>
+  </div>
+  <nav>
+    <button class="active" onclick="showTab('overview')">Overview</button>
+    <button onclick="showTab('demand')">TAI Demand</button>
+    <button onclick="showTab('cogen')">Cogen</button>
+    <button onclick="showTab('supply')">Supply</button>
+    <button onclick="showTab('utilisation')">Utilisation</button>
+    <button onclick="showTab('debt')">Debt</button>
+    <button onclick="showTab('d365')">D365</button>
+  </nav>
+</header>
+
+<main>
+
+<!-- ===================== OVERVIEW ===================== -->
+<section id="overview" class="section active">
+
+  <div class="kpi-grid">
+    <div class="kpi blue">
+      <div class="kpi-label">TAI Demand — Feb actual</div>
+      <div class="kpi-value">£1,002k</div>
+      <div class="kpi-sub pos">+18% vs target &nbsp;·&nbsp; <span class="warn-c">−9% vs plan</span></div>
+    </div>
+    <div class="kpi green">
+      <div class="kpi-label">TAI Cogen — Feb actual</div>
+      <div class="kpi-value">£643k</div>
+      <div class="kpi-sub pos">Capital Projects 85% of total</div>
+    </div>
+    <div class="kpi amber">
+      <div class="kpi-label">Demand EoY forecast</div>
+      <div class="kpi-value">£9.1m</div>
+      <div class="kpi-sub warn-c">vs plan £9.75m</div>
+    </div>
+    <div class="kpi teal">
+      <div class="kpi-label">Cogen EoY forecast</div>
+      <div class="kpi-value">£8.35m</div>
+      <div class="kpi-sub pos">vs plan £8.04m — ahead</div>
+    </div>
+  </div>
+
+  <div class="kpi-grid" style="margin-bottom:24px;">
+    <div class="kpi purple">
+      <div class="kpi-label">Supply YTD</div>
+      <div class="kpi-value">£12.9m</div>
+      <div class="kpi-sub pos">+23% vs FY25 &nbsp;·&nbsp; <span class="neg">−5% vs fcst</span></div>
+    </div>
+    <div class="kpi red">
+      <div class="kpi-label">Feb utilisation</div>
+      <div class="kpi-value">68%</div>
+      <div class="kpi-sub neg">−10pp vs Feb 2025 &nbsp;·&nbsp; −7pp vs fcst</div>
+    </div>
+    <div class="kpi green">
+      <div class="kpi-label">Total overdue debt</div>
+      <div class="kpi-value">£235k</div>
+      <div class="kpi-sub pos">Lowest point in FY26</div>
+    </div>
+    <div class="kpi amber">
+      <div class="kpi-label">Mar utilisation forecast</div>
+      <div class="kpi-value">77%</div>
+      <div class="kpi-sub pos">Strong recovery expected</div>
+    </div>
+  </div>
+
+  <div class="chart-row">
+    <div class="card">
+      <div class="card-title">TAI Demand — monthly revenue <span>FY26 actuals + Mar forecast</span></div>
+      <div class="legend">
+        <span class="legend-item"><span class="legend-dot" style="background:#4f8ef7"></span>Actual</span>
+        <span class="legend-item"><span class="legend-dot" style="background:#2dd4a0"></span>Forecast (weighted)</span>
+        <span class="legend-item"><span class="legend-dot" style="background:rgba(255,255,255,0.15);border:1px dashed rgba(255,255,255,0.3)"></span>Plan</span>
+      </div>
+      <div class="chart-wrap" style="height:240px">
+        <canvas id="demandMonthly"></canvas>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">TAI Cogen — monthly revenue <span>FY26 actuals + Mar forecast</span></div>
+      <div class="legend">
+        <span class="legend-item"><span class="legend-dot" style="background:#34d1bf"></span>Actual</span>
+        <span class="legend-item"><span class="legend-dot" style="background:#a78bfa"></span>Forecast (weighted)</span>
+        <span class="legend-item"><span class="legend-dot" style="background:rgba(255,255,255,0.15);border:1px dashed rgba(255,255,255,0.3)"></span>Plan</span>
+      </div>
+      <div class="chart-wrap" style="height:240px">
+        <canvas id="cogenMonthly"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <div class="chart-row">
+    <div class="card">
+      <div class="card-title">Demand — cumulative vs plan <span>FY26</span></div>
+      <div class="legend">
+        <span class="legend-item"><span class="legend-dot" style="background:#4f8ef7"></span>Actual + forecast</span>
+        <span class="legend-item"><span class="legend-dot" style="background:rgba(255,255,255,0.2);border:1px dashed rgba(255,255,255,0.35)"></span>Plan</span>
+      </div>
+      <div class="chart-wrap" style="height:220px">
+        <canvas id="demandCumul"></canvas>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Cogen — cumulative vs plan <span>FY26</span></div>
+      <div class="legend">
+        <span class="legend-item"><span class="legend-dot" style="background:#34d1bf"></span>Actual + forecast</span>
+        <span class="legend-item"><span class="legend-dot" style="background:rgba(255,255,255,0.2);border:1px dashed rgba(255,255,255,0.35)"></span>Plan</span>
+      </div>
+      <div class="chart-wrap" style="height:220px">
+        <canvas id="cogenCumul"></canvas>
+      </div>
+    </div>
+  </div>
+
+</section>
+
+<!-- ===================== DEMAND ===================== -->
+<section id="demand" class="section">
+
+  <div class="highlight-box">
+    <div class="hl-title">February highlights</div>
+    February delivered £1,002k — 18% over target and one of the strongest months of FY26. March is forecast at £827k (weighted), slightly under the £900k plan. EoY is tracking at £9.1m against a £9.75m plan.
+  </div>
+
+  <div class="kpi-grid">
+    <div class="kpi blue"><div class="kpi-label">Feb actual</div><div class="kpi-value">£1,002k</div><div class="kpi-sub pos">+18% vs target</div></div>
+    <div class="kpi amber"><div class="kpi-label">Mar forecast (wtd)</div><div class="kpi-value">£827k</div><div class="kpi-sub warn-c">vs plan £900k</div></div>
+    <div class="kpi blue"><div class="kpi-label">FY26 YTD (to Feb)</div><div class="kpi-value">£8.27m</div><div class="kpi-sub">vs plan £8.85m</div></div>
+    <div class="kpi amber"><div class="kpi-label">EoY forecast</div><div class="kpi-value">£9.1m</div><div class="kpi-sub warn-c">vs plan £9.75m</div></div>
+  </div>
+
+  <div class="chart-row">
+    <div class="card">
+      <div class="card-title">Revenue by offering — recent months + forecast</div>
+      <div class="legend">
+        <span class="legend-item"><span class="legend-dot" style="background:#4f8ef7"></span>Digital</span>
+        <span class="legend-item"><span class="legend-dot" style="background:#2dd4a0"></span>Gas</span>
+        <span class="legend-item"><span class="legend-dot" style="background:#a78bfa"></span>Assets</span>
+        <span class="legend-item"><span class="legend-dot" style="background:#f5a623"></span>Cap Projects</span>
+        <span class="legend-item"><span class="legend-dot" style="background:#e05c6e"></span>Emissions</span>
+        <span class="legend-item"><span class="legend-dot" style="background:#64748b"></span>Other</span>
+      </div>
+      <div class="chart-wrap" style="height:260px">
+        <canvas id="demandOffering"></canvas>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">FY26 total split by offering <span>Apr 25 — Mar 26</span></div>
+      <div class="legend">
+        <span class="legend-item"><span class="legend-dot" style="background:#4f8ef7"></span>Digital 49%</span>
+        <span class="legend-item"><span class="legend-dot" style="background:#2dd4a0"></span>Gas 25%</span>
+        <span class="legend-item"><span class="legend-dot" style="background:#a78bfa"></span>Assets 8%</span>
+        <span class="legend-item"><span class="legend-dot" style="background:#f5a623"></span>Cap Proj 8%</span>
+        <span class="legend-item"><span class="legend-dot" style="background:#e05c6e"></span>Emissions 5%</span>
+        <span class="legend-item"><span class="legend-dot" style="background:#64748b"></span>Other 5%</span>
+      </div>
+      <div class="chart-wrap" style="height:260px">
+        <canvas id="demandPie"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <div class="chart-row single">
+    <div class="card">
+      <div class="card-title">FY27 forecast — April to June 2026</div>
+      <div class="legend">
+        <span class="legend-item"><span class="legend-dot" style="background:#4f8ef7"></span>Digital</span>
+        <span class="legend-item"><span class="legend-dot" style="background:#2dd4a0"></span>Gas</span>
+        <span class="legend-item"><span class="legend-dot" style="background:#a78bfa"></span>Assets</span>
+        <span class="legend-item"><span class="legend-dot" style="background:#f5a623"></span>Cap Projects</span>
+        <span class="legend-item"><span class="legend-dot" style="background:rgba(255,255,255,0.15);border:1px dashed rgba(255,255,255,0.3)"></span>Plan</span>
+      </div>
+      <div class="chart-wrap" style="height:200px">
+        <canvas id="demandFY27"></canvas>
+      </div>
+    </div>
+  </div>
+
+</section>
+
+<!-- ===================== COGEN ===================== -->
+<section id="cogen" class="section">
+
+  <div class="highlight-box green">
+    <div class="hl-title">Cogen highlights</div>
+    Cogen has consistently tracked above plan all FY26. Expected to close at £8.35m vs a £8.04m plan. Capital Projects remains the dominant offering. Power Networks is the largest source, though Gas Networks is trending upwards.
+  </div>
+
+  <div class="kpi-grid">
+    <div class="kpi teal"><div class="kpi-label">Feb actual</div><div class="kpi-value">£643k</div><div class="kpi-sub">Cap Projects 85% of total</div></div>
+    <div class="kpi teal"><div class="kpi-label">Mar forecast (wtd)</div><div class="kpi-value">£597k</div><div class="kpi-sub warn-c">vs plan £670k</div></div>
+    <div class="kpi green"><div class="kpi-label">FY26 YTD (to Feb)</div><div class="kpi-value">£7.76m</div><div class="kpi-sub pos">vs plan £7.37m — ahead</div></div>
+    <div class="kpi green"><div class="kpi-label">EoY forecast</div><div class="kpi-value">£8.35m</div><div class="kpi-sub pos">vs plan £8.04m</div></div>
+  </div>
+
+  <div class="chart-row">
+    <div class="card">
+      <div class="card-title">Monthly cogen by offering</div>
+      <div class="legend">
+        <span class="legend-item"><span class="legend-dot" style="background:#f5a623"></span>Cap Projects</span>
+        <span class="legend-item"><span class="legend-dot" style="background:#a78bfa"></span>Assets</span>
+        <span class="legend-item"><span class="legend-dot" style="background:#34d1bf"></span>Gas</span>
+        <span class="legend-item"><span class="legend-dot" style="background:#64748b"></span>Other</span>
+      </div>
+      <div class="chart-wrap" style="height:250px">
+        <canvas id="cogenOffering"></canvas>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Monthly cogen by source</div>
+      <div class="legend">
+        <span class="legend-item"><span class="legend-dot" style="background:#4f8ef7"></span>Power Networks</span>
+        <span class="legend-item"><span class="legend-dot" style="background:#34d1bf"></span>Gas Networks</span>
+        <span class="legend-item"><span class="legend-dot" style="background:#2dd4a0"></span>Water Networks</span>
+        <span class="legend-item"><span class="legend-dot" style="background:#64748b"></span>Other</span>
+      </div>
+      <div class="chart-wrap" style="height:250px">
+        <canvas id="cogenSource"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <div class="chart-row">
+    <div class="card">
+      <div class="card-title">FY26 total split — by offering <span>Apr 25 — Mar 26</span></div>
+      <div class="legend">
+        <span class="legend-item"><span class="legend-dot" style="background:#f5a623"></span>Cap Projects 47%</span>
+        <span class="legend-item"><span class="legend-dot" style="background:#64748b"></span>Other 33%</span>
+        <span class="legend-item"><span class="legend-dot" style="background:#a78bfa"></span>Assets 12%</span>
+        <span class="legend-item"><span class="legend-dot" style="background:#34d1bf"></span>Gas 7%</span>
+      </div>
+      <div class="chart-wrap" style="height:220px">
+        <canvas id="cogenPieOff"></canvas>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">FY26 total split — by source <span>Apr 25 — Mar 26</span></div>
+      <div class="legend">
+        <span class="legend-item"><span class="legend-dot" style="background:#4f8ef7"></span>Power Networks 45%</span>
+        <span class="legend-item"><span class="legend-dot" style="background:#64748b"></span>Other 36%</span>
+        <span class="legend-item"><span class="legend-dot" style="background:#34d1bf"></span>Gas Networks 14%</span>
+        <span class="legend-item"><span class="legend-dot" style="background:#2dd4a0"></span>Water Networks 5%</span>
+      </div>
+      <div class="chart-wrap" style="height:220px">
+        <canvas id="cogenPieSrc"></canvas>
+      </div>
+    </div>
+  </div>
+
+</section>
+
+<!-- ===================== SUPPLY ===================== -->
+<section id="supply" class="section">
+
+  <div class="highlight-box amber">
+    <div class="hl-title">Supply highlights — February 2026</div>
+    Supply revenue for February amounted to £1.09m, with ER-RNW the largest demand source. YTD of £12.9m is 23% ahead of FY25 (£10.5m), but 5% behind the YTD forecast of £13.6m. Soft billability and 2 fewer FTEs are the key drivers of the shortfall.
+  </div>
+
+  <div class="kpi-grid">
+    <div class="kpi purple"><div class="kpi-label">Feb supply revenue</div><div class="kpi-value">£1.09m</div><div class="kpi-sub">ER-RNW largest source</div></div>
+    <div class="kpi green"><div class="kpi-label">YTD vs FY25</div><div class="kpi-value">+23%</div><div class="kpi-sub pos">£12.9m vs £10.5m</div></div>
+    <div class="kpi red"><div class="kpi-label">YTD vs forecast</div><div class="kpi-value">−5%</div><div class="kpi-sub neg">£12.9m vs £13.6m fcst</div></div>
+    <div class="kpi amber"><div class="kpi-label">Feb margin</div><div class="kpi-value">74.7%</div><div class="kpi-sub">Consistent with FY</div></div>
+  </div>
+
+  <div class="chart-row thirds">
+    <div class="card">
+      <div class="card-title">February supply by demand BU</div>
+      <div class="chart-wrap" style="height:280px">
+        <canvas id="supplyBU"></canvas>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Top 10 clients — February</div>
+      <table class="forecast-table">
+        <thead><tr><th>Client</th><th>Revenue</th><th>Margin</th></tr></thead>
+        <tbody>
+          <tr><td>SSE</td><td class="mono">£209k</td><td><span class="badge badge-green">77%</span></td></tr>
+          <tr><td>Scottish Power</td><td class="mono">£154k</td><td><span class="badge badge-green">72%</span></td></tr>
+          <tr><td>Northern Gas</td><td class="mono">£144k</td><td><span class="badge badge-green">79%</span></td></tr>
+          <tr><td>Shell</td><td class="mono">£129k</td><td><span class="badge badge-green">74%</span></td></tr>
+          <tr><td>Seplat Energy</td><td class="mono">£60k</td><td><span class="badge badge-green">75%</span></td></tr>
+          <tr><td>INEOS</td><td class="mono">£47k</td><td><span class="badge badge-green">88%</span></td></tr>
+          <tr><td>ITOCHU</td><td class="mono">£48k</td><td><span class="badge badge-green">72%</span></td></tr>
+          <tr><td>Serica Energy</td><td class="mono">£37k</td><td><span class="badge badge-green">80%</span></td></tr>
+          <tr><td>Chubb</td><td class="mono">£29k</td><td><span class="badge badge-blue">75%</span></td></tr>
+          <tr><td>HMRC</td><td class="mono">£55k</td><td><span class="badge badge-green">81%</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</section>
+
+<!-- ===================== UTILISATION ===================== -->
+<section id="utilisation" class="section">
+
+  <div class="highlight-box">
+    <div class="hl-title">Utilisation summary</div>
+    February came in at 68% — 10pp below February 2025 and 7pp behind forecast. Billable utilisation was 61.5%. March is forecast at 77%, showing a strong recovery. Analytics/Consulting leads at 93%.
+  </div>
+
+  <div class="kpi-grid">
+    <div class="kpi red"><div class="kpi-label">Feb BU utilisation</div><div class="kpi-value">68.3%</div><div class="kpi-sub neg">−10pp vs Feb 2025</div></div>
+    <div class="kpi red"><div class="kpi-label">Feb billable util</div><div class="kpi-value">61.5%</div><div class="kpi-sub neg">−7pp vs forecast</div></div>
+    <div class="kpi green"><div class="kpi-label">Mar BU forecast</div><div class="kpi-value">77%</div><div class="kpi-sub pos">Recovery expected</div></div>
+    <div class="kpi green"><div class="kpi-label">6-week forecast</div><div class="kpi-value">68%</div><div class="kpi-sub warn-c">78% excl. pipeline</div></div>
+  </div>
+
+  <div class="util-grid">
+    <div class="util-card">
+      <div class="util-team">Analytics / Consulting <span style="color:var(--muted);font-size:10px">(7 FTE)</span></div>
+      <div class="util-pct" style="color:#2dd4a0">93%</div>
+      <div class="util-bar-bg"><div class="util-bar-fill" style="width:93%;background:#2dd4a0"></div></div>
+      <div class="util-sub">Strongest team</div>
+    </div>
+    <div class="util-card">
+      <div class="util-team">Digital <span style="color:var(--muted);font-size:10px">(8 FTE)</span></div>
+      <div class="util-pct" style="color:#4f8ef7">86%</div>
+      <div class="util-bar-bg"><div class="util-bar-fill" style="width:86%;background:#4f8ef7"></div></div>
+      <div class="util-sub">Mar forecast: 87%</div>
+    </div>
+    <div class="util-card">
+      <div class="util-team">Capital Projects <span style="color:var(--muted);font-size:10px">(15 FTE)</span></div>
+      <div class="util-pct" style="color:#f5a623">74%</div>
+      <div class="util-bar-bg"><div class="util-bar-fill" style="width:74%;background:#f5a623"></div></div>
+      <div class="util-sub">Mar forecast: 65% (73% excl. P)</div>
+    </div>
+    <div class="util-card">
+      <div class="util-team">Gas <span style="color:var(--muted);font-size:10px">(9 FTE)</span></div>
+      <div class="util-pct" style="color:#f5a623">74%</div>
+      <div class="util-bar-bg"><div class="util-bar-fill" style="width:74%;background:#f5a623"></div></div>
+      <div class="util-sub">Mar forecast: 59% (65% excl. P)</div>
+    </div>
+    <div class="util-card">
+      <div class="util-team">Ops Excellence <span style="color:var(--muted);font-size:10px">(4 FTE)</span></div>
+      <div class="util-pct" style="color:#f5a623">73%</div>
+      <div class="util-bar-bg"><div class="util-bar-fill" style="width:73%;background:#f5a623"></div></div>
+      <div class="util-sub">Mar forecast: 64% (77% excl. P)</div>
+    </div>
+    <div class="util-card">
+      <div class="util-team">BU Total <span style="color:var(--muted);font-size:10px">(all teams)</span></div>
+      <div class="util-pct" style="color:#e05c6e">68.3%</div>
+      <div class="util-bar-bg"><div class="util-bar-fill" style="width:68%;background:#e05c6e"></div></div>
+      <div class="util-sub">Jan: 72.8% &nbsp;·&nbsp; Mar fcst: 77%</div>
+    </div>
+  </div>
+
+  <div class="chart-row single">
+    <div class="card">
+      <div class="card-title">Utilisation by team — February 2026</div>
+      <div class="chart-wrap" style="height:220px">
+        <canvas id="utilChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+</section>
+
+<!-- ===================== DEBT ===================== -->
+<section id="debt" class="section">
+
+  <div class="highlight-box green">
+    <div class="hl-title">Debt summary</div>
+    Total overdue debt is at its FY26 low of £235k (£93k aged debt + £142k awaiting POs). Consistent downward trend throughout the year, driven by proactive invoice chasing and PO management.
+  </div>
+
+  <div class="kpi-grid">
+    <div class="kpi green"><div class="kpi-label">Total debt (Mar)</div><div class="kpi-value">£235k</div><div class="kpi-sub pos">Lowest point in FY26</div></div>
+    <div class="kpi amber"><div class="kpi-label">Aged debt</div><div class="kpi-value">£93k</div><div class="kpi-sub">Invoices outstanding</div></div>
+    <div class="kpi amber"><div class="kpi-label">Awaiting POs</div><div class="kpi-value">£142k</div><div class="kpi-sub">PO issuance pending</div></div>
+    <div class="kpi green"><div class="kpi-label">Peak (May 25)</div><div class="kpi-value">£1,489k</div><div class="kpi-sub neg">vs £235k today</div></div>
+  </div>
+
+  <div class="chart-row single">
+    <div class="card">
+      <div class="card-title">Total debt trajectory — FY26 <span>Aged debt + unbilled awaiting POs</span></div>
+      <div class="legend">
+        <span class="legend-item"><span class="legend-dot" style="background:#e05c6e"></span>Aged debt</span>
+        <span class="legend-item"><span class="legend-dot" style="background:#f5a623"></span>Awaiting POs</span>
+      </div>
+      <div class="chart-wrap" style="height:260px">
+        <canvas id="debtChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+</section>
+
+<!-- ===================== D365 ===================== -->
+<section id="d365" class="section">
+
+  <div class="highlight-box amber">
+    <div class="hl-title">D365 go-live</div>
+    Official go-live is 20 April 2026. Phased rollout begins 13 April. Finance rollout and back-end work is already underway. Training is live. Hypercare support includes a Sidekick SharePoint agent, in-person Tech Bar support (UK, US, Australia), and daily virtual drop-in sessions.
+  </div>
+
+  <div class="kpi-grid">
+    <div class="kpi amber"><div class="kpi-label">Official go-live</div><div class="kpi-value">20 Apr</div><div class="kpi-sub warn-c">12 days away</div></div>
+    <div class="kpi blue"><div class="kpi-label">Early rollout starts</div><div class="kpi-value">13 Apr</div><div class="kpi-sub">Consulting phased rollout (4 days)</div></div>
+    <div class="kpi green"><div class="kpi-label">Training status</div><div class="kpi-value">Live</div><div class="kpi-sub pos">D365 training underway</div></div>
+    <div class="kpi green"><div class="kpi-label">Hypercare support</div><div class="kpi-value">Active</div><div class="kpi-sub pos">Sidekick + Tech Bar + drop-ins</div></div>
+  </div>
+
+  <div class="chart-row thirds">
+    <div class="card">
+      <div class="card-title">Cutover timeline</div>
+      <div class="timeline">
+        <div class="timeline-item done">
+          <div class="timeline-date">30 Mar — ongoing</div>
+          <div class="timeline-text">Business rampdown activities &amp; data migration cutover</div>
+        </div>
+        <div class="timeline-item done">
+          <div class="timeline-date">From 31 Mar</div>
+          <div class="timeline-text">Finance rollout &amp; back-end cutover (#1 Start Cutover)</div>
+        </div>
+        <div class="timeline-item warn">
+          <div class="timeline-date">13 Apr</div>
+          <div class="timeline-text">Consulting phased rollout begins (4 days) — Happy Path &amp; GoLive Start</div>
+        </div>
+        <div class="timeline-item warn">
+          <div class="timeline-date">20 Apr</div>
+          <div class="timeline-text">Official go-live complete (#7 GoLive Complete)</div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-date">Post go-live (first 2 weeks)</div>
+          <div class="timeline-text">Daily virtual drop-in sessions @ 4PM for BCN. Floorwalkers at Tech Bar (BG office).</div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Hypercare support channels</div>
+      <table class="forecast-table">
+        <thead><tr><th>Channel</th><th>Use for</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Sidekick</strong><br><span style="color:var(--muted);font-size:11px">SharePoint agent</span></td><td>Instant navigation &amp; how-to queries — your virtual floorwalker</td></tr>
+          <tr><td><strong>Enable</strong><br><span style="color:var(--muted);font-size:11px">Finance portal</span></td><td>All finance queries + technical issues via quick links in Finance section</td></tr>
+          <tr><td><strong>Tech Bar</strong><br><span style="color:var(--muted);font-size:11px">UK / US / AUS</span></td><td>In-person support. Floorwalkers anchored at BG office Tech Bar</td></tr>
+          <tr><td><strong>Drop-In Sessions</strong><br><span style="color:var(--muted);font-size:11px">Virtual, 4PM daily</span></td><td>BCN virtual sessions for first 2 weeks, SME available as needed</td></tr>
+          <tr><td><strong>BAU Channels</strong><br><span style="color:var(--muted);font-size:11px">Finance / SBM / Proc.</span></td><td>Finance Business Partners, SBMs, Procurement (Buyers) remain open</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</section>
+
+</main>
+
+<script>
+function showTab(id) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  event.target.classList.add('active');
+}
+
+const months = ['Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec','Jan','Feb','Mar'];
+const gridColor = 'rgba(255,255,255,0.05)';
+const tickColor = '#7a8099';
+const defaults = {
+  responsive: true,
+  maintainAspectRatio: false,
+  plugins: { legend: { display: false }, tooltip: { backgroundColor: '#1e2333', titleColor: '#e8eaf0', bodyColor: '#7a8099', borderColor: 'rgba(255,255,255,0.1)', borderWidth: 1 } },
+  scales: {
+    x: { ticks: { color: tickColor, font: { size: 11 }, autoSkip: false, maxRotation: 0 }, grid: { color: gridColor }, border: { color: 'transparent' } },
+    y: { ticks: { color: tickColor, font: { size: 11 }, callback: v => '£' + (v/1000).toFixed(0) + 'k' }, grid: { color: gridColor }, border: { color: 'transparent' } }
+  }
+};
+
+new Chart(document.getElementById('demandMonthly'), {
+  type: 'bar',
+  data: {
+    labels: months,
+    datasets: [
+      { label: 'Actual', data: [493693,828330,881169,1040090,745787,489510,746804,651719,625231,769341,1001664,null], backgroundColor: '#4f8ef7', borderRadius: 3 },
+      { label: 'Forecast', data: [null,null,null,null,null,null,null,null,null,null,null,826698], backgroundColor: '#2dd4a0', borderRadius: 3 },
+      { label: 'Plan', data: [700000,700000,800000,800000,850000,850000,850000,850000,750000,850000,850000,900000], type: 'line', borderColor: 'rgba(255,255,255,0.3)', borderDash: [4,4], borderWidth: 1.5, pointRadius: 0, fill: false, tension: 0 }
+    ]
+  },
+  options: { ...defaults }
+});
+
+new Chart(document.getElementById('cogenMonthly'), {
+  type: 'bar',
+  data: {
+    labels: months,
+    datasets: [
+      { label: 'Actual', data: [758801,736466,988761,819584,323301,751281,630057,690272,773870,641758,642687,null], backgroundColor: '#34d1bf', borderRadius: 3 },
+      { label: 'Forecast', data: [null,null,null,null,null,null,null,null,null,null,null,597066], backgroundColor: '#a78bfa', borderRadius: 3 },
+      { label: 'Plan', data: [670000,670000,670000,670000,670000,670000,670000,670000,670000,670000,670000,670000], type: 'line', borderColor: 'rgba(255,255,255,0.3)', borderDash: [4,4], borderWidth: 1.5, pointRadius: 0, fill: false, tension: 0 }
+    ]
+  },
+  options: { ...defaults }
+});
+
+new Chart(document.getElementById('demandCumul'), {
+  type: 'line',
+  data: {
+    labels: months,
+    datasets: [
+      { label: 'Actual + Forecast', data: [493693,1322023,2203192,3243282,3989069,4478579,5225383,5877102,6502333,7271674,8273338,9100036], borderColor: '#4f8ef7', backgroundColor: 'rgba(79,142,247,0.08)', fill: true, tension: 0.3, pointRadius: 3, pointBackgroundColor: '#4f8ef7', borderWidth: 2 },
+      { label: 'Plan', data: [700000,1400000,2200000,3000000,3850000,4700000,5550000,6400000,7150000,8000000,8850000,9750000], borderColor: 'rgba(255,255,255,0.25)', borderDash: [4,4], borderWidth: 1.5, pointRadius: 0, fill: false, tension: 0.3 }
+    ]
+  },
+  options: { ...defaults, scales: { ...defaults.scales, y: { ...defaults.scales.y, ticks: { color: tickColor, font: { size: 11 }, callback: v => '£' + (v/1000000).toFixed(1) + 'm' } } } }
+});
+
+new Chart(document.getElementById('cogenCumul'), {
+  type: 'line',
+  data: {
+    labels: months,
+    datasets: [
+      { label: 'Actual + Forecast', data: [758801,1495267,2484028,3303612,3626913,4378194,5008251,5698523,6472393,7114151,7756838,8353904], borderColor: '#34d1bf', backgroundColor: 'rgba(52,209,191,0.08)', fill: true, tension: 0.3, pointRadius: 3, pointBackgroundColor: '#34d1bf', borderWidth: 2 },
+      { label: 'Plan', data: [670000,1340000,2010000,2680000,3350000,4020000,4690000,5360000,6030000,6700000,7370000,8040000], borderColor: 'rgba(255,255,255,0.25)', borderDash: [4,4], borderWidth: 1.5, pointRadius: 0, fill: false, tension: 0.3 }
+    ]
+  },
+  options: { ...defaults, scales: { ...defaults.scales, y: { ...defaults.scales.y, ticks: { color: tickColor, font: { size: 11 }, callback: v => '£' + (v/1000000).toFixed(1) + 'm' } } } }
+});
+
+const recentMonths = ['Dec','Jan','Feb','Mar\n(fcst)'];
+new Chart(document.getElementById('demandOffering'), {
+  type: 'bar',
+  data: {
+    labels: recentMonths,
+    datasets: [
+      { label: 'Digital', data: [295624,508237,497287,244344], backgroundColor: '#4f8ef7', borderRadius: 2 },
+      { label: 'Gas', data: [140464,178953,267160,196857], backgroundColor: '#2dd4a0', borderRadius: 2 },
+      { label: 'Assets', data: [63667,80418,88553,26316], backgroundColor: '#a78bfa', borderRadius: 2 },
+      { label: 'Cap Projects', data: [48334,49019,37604,119911], backgroundColor: '#f5a623', borderRadius: 2 },
+      { label: 'Emissions', data: [37165,16317,106831,0], backgroundColor: '#e05c6e', borderRadius: 2 },
+      { label: 'Other', data: [0,-63603,4231,239270], backgroundColor: '#64748b', borderRadius: 2 }
+    ]
+  },
+  options: { ...defaults, scales: { ...defaults.scales, x: { ...defaults.scales.x, stacked: true }, y: { ...defaults.scales.y, stacked: true } } }
+});
+
+new Chart(document.getElementById('demandPie'), {
+  type: 'doughnut',
+  data: {
+    labels: ['Digital','Gas','Assets','Cap Projects','Emissions','Other'],
+    datasets: [{ data: [3549501,1599786,258953,597137,426151,272424], backgroundColor: ['#4f8ef7','#2dd4a0','#a78bfa','#f5a623','#e05c6e','#64748b'], borderWidth: 0, hoverOffset: 6 }]
+  },
+  options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { backgroundColor: '#1e2333', titleColor: '#e8eaf0', bodyColor: '#7a8099', borderColor: 'rgba(255,255,255,0.1)', borderWidth: 1, callbacks: { label: ctx => ' £' + (ctx.raw/1000).toFixed(0) + 'k' } } }, cutout: '62%' }
+});
+
+new Chart(document.getElementById('demandFY27'), {
+  type: 'bar',
+  data: {
+    labels: ['Apr 26','May 26','Jun 26'],
+    datasets: [
+      { label: 'Digital', data: [298212,309322,406996], backgroundColor: '#4f8ef7', borderRadius: 3 },
+      { label: 'Gas', data: [198144,147391,119926], backgroundColor: '#2dd4a0', borderRadius: 3 },
+      { label: 'Assets', data: [135247,131985,46742], backgroundColor: '#a78bfa', borderRadius: 3 },
+      { label: 'Cap Projects', data: [195524,240947,242372], backgroundColor: '#f5a623', borderRadius: 3 },
+      { label: 'Plan', data: [616000,616000,588000], type: 'line', borderColor: 'rgba(255,255,255,0.3)', borderDash: [4,4], borderWidth: 1.5, pointRadius: 0, fill: false, tension: 0 }
+    ]
+  },
+  options: { ...defaults, scales: { ...defaults.scales, x: { ...defaults.scales.x, stacked: true }, y: { ...defaults.scales.y, stacked: true } } }
+});
+
+new Chart(document.getElementById('cogenOffering'), {
+  type: 'bar',
+  data: {
+    labels: months,
+    datasets: [
+      { label: 'Cap Projects', data: [312518,273645,250961,245631,173151,204113,183459,466916,486106,496514,544604,311392], backgroundColor: '#f5a623', borderRadius: 2 },
+      { label: 'Assets', data: [80038,56462,67548,83816,54918,152387,80326,42118,0,135542,98083,189803], backgroundColor: '#a78bfa', borderRadius: 2 },
+      { label: 'Gas', data: [141890,101591,248389,128552,-98289,75316,55445,-179561,29141,-2867,0,95871], backgroundColor: '#34d1bf', borderRadius: 2 },
+      { label: 'Other', data: [224355,304768,421863,361585,193521,319465,310827,360799,258623,12569,0,0], backgroundColor: '#64748b', borderRadius: 2 }
+    ]
+  },
+  options: { ...defaults, scales: { ...defaults.scales, x: { ...defaults.scales.x, stacked: true }, y: { ...defaults.scales.y, stacked: true } } }
+});
+
+new Chart(document.getElementById('cogenSource'), {
+  type: 'bar',
+  data: {
+    labels: months,
+    datasets: [
+      { label: 'Power Networks', data: [355556,283061,264245,262066,228069,356500,258933,368936,347366,475744,393797,160375], backgroundColor: '#4f8ef7', borderRadius: 2 },
+      { label: 'Gas Networks', data: [121590,80566,219389,99552,-172085,4472,55212,166437,167881,70909,150807,233155], backgroundColor: '#34d1bf', borderRadius: 2 },
+      { label: 'Water Networks', data: [37000,0,0,0,0,0,0,0,0,82536,98083,189803], backgroundColor: '#2dd4a0', borderRadius: 2 },
+      { label: 'Other', data: [244655,372839,505127,457966,267317,390309,315912,154899,258623,12569,0,13732], backgroundColor: '#64748b', borderRadius: 2 }
+    ]
+  },
+  options: { ...defaults, scales: { ...defaults.scales, x: { ...defaults.scales.x, stacked: true }, y: { ...defaults.scales.y, stacked: true } } }
+});
+
+new Chart(document.getElementById('cogenPieOff'), {
+  type: 'doughnut',
+  data: {
+    labels: ['Cap Projects','Other','Assets','Gas'],
+    datasets: [{ data: [3949010,2768375,1041041,595478], backgroundColor: ['#f5a623','#64748b','#a78bfa','#34d1bf'], borderWidth: 0, hoverOffset: 6 }]
+  },
+  options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { backgroundColor: '#1e2333', titleColor: '#e8eaf0', bodyColor: '#7a8099', borderColor: 'rgba(255,255,255,0.1)', borderWidth: 1, callbacks: { label: ctx => ' £' + (ctx.raw/1000).toFixed(0) + 'k' } } }, cutout: '62%' }
+});
+
+new Chart(document.getElementById('cogenPieSrc'), {
+  type: 'doughnut',
+  data: {
+    labels: ['Power Networks','Other','Gas Networks','Water Networks'],
+    datasets: [{ data: [3754648,2993948,1197885,407422], backgroundColor: ['#4f8ef7','#64748b','#34d1bf','#2dd4a0'], borderWidth: 0, hoverOffset: 6 }]
+  },
+  options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { backgroundColor: '#1e2333', titleColor: '#e8eaf0', bodyColor: '#7a8099', borderColor: 'rgba(255,255,255,0.1)', borderWidth: 1, callbacks: { label: ctx => ' £' + (ctx.raw/1000).toFixed(0) + 'k' } } }, cutout: '62%' }
+});
+
+new Chart(document.getElementById('supplyBU'), {
+  type: 'bar',
+  data: {
+    labels: ['ER-RNW','ER-TAI','ER-PLCS','ER-CET','GOV-HETA','GOV-CG','PS-TMT','ER-AUS','GOV-HA'],
+    datasets: [{ label: 'Revenue', data: [376842,283260,197772,89620,42525,39710,36917,18644,1200], backgroundColor: ['#4f8ef7','#4f8ef7','#4f8ef7','#4f8ef7','#a78bfa','#a78bfa','#34d1bf','#2dd4a0','#a78bfa'], borderRadius: 3 }]
+  },
+  options: {
+    indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false }, tooltip: { backgroundColor: '#1e2333', titleColor: '#e8eaf0', bodyColor: '#7a8099', borderColor: 'rgba(255,255,255,0.1)', borderWidth: 1 } },
+    scales: {
+      x: { ticks: { color: tickColor, font: { size: 11 }, callback: v => '£' + (v/1000).toFixed(0) + 'k' }, grid: { color: gridColor }, border: { color: 'transparent' } },
+      y: { ticks: { color: tickColor, font: { size: 11 } }, grid: { color: 'transparent' }, border: { color: 'transparent' } }
+    }
+  }
+});
+
+new Chart(document.getElementById('utilChart'), {
+  type: 'bar',
+  data: {
+    labels: ['An/Co','Digital','Cap Proj','Gas','Ops Ex','BU Avg'],
+    datasets: [{ label: 'Utilisation %', data: [93,86,74,74,73,68], backgroundColor: ['#2dd4a0','#4f8ef7','#f5a623','#f5a623','#f5a623','#e05c6e'], borderRadius: 4 }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false }, tooltip: { backgroundColor: '#1e2333', titleColor: '#e8eaf0', bodyColor: '#7a8099', borderColor: 'rgba(255,255,255,0.1)', borderWidth: 1, callbacks: { label: ctx => ' ' + ctx.raw + '%' } } },
+    scales: {
+      x: { ticks: { color: tickColor, font: { size: 11 } }, grid: { color: gridColor }, border: { color: 'transparent' } },
+      y: { min: 0, max: 100, ticks: { color: tickColor, font: { size: 11 }, callback: v => v + '%' }, grid: { color: gridColor }, border: { color: 'transparent' } }
+    }
+  }
+});
+
+new Chart(document.getElementById('debtChart'), {
+  type: 'bar',
+  data: {
+    labels: ['Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec','Jan','Feb','Mar'],
+    datasets: [
+      { label: 'Aged debt', data: [469,971,702,515,488,379,96,264,223,203,183,93], backgroundColor: '#e05c6e', borderRadius: 2 },
+      { label: 'Awaiting POs', data: [1000,518,397,670,744,243,774,518,361,283,204,142], backgroundColor: '#f5a623', borderRadius: 2 }
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false }, tooltip: { backgroundColor: '#1e2333', titleColor: '#e8eaf0', bodyColor: '#7a8099', borderColor: 'rgba(255,255,255,0.1)', borderWidth: 1, callbacks: { label: ctx => ' £' + ctx.raw + 'k' } } },
+    scales: {
+      x: { stacked: true, ticks: { color: tickColor, font: { size: 11 } }, grid: { color: gridColor }, border: { color: 'transparent' } },
+      y: { stacked: true, ticks: { color: tickColor, font: { size: 11 }, callback: v => '£' + v + 'k' }, grid: { color: gridColor }, border: { color: 'transparent' } }
+    }
+  }
+});
+</script>
+</body>
+</html>
